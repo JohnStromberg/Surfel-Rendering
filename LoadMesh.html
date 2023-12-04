@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mesh Loading Example</title>
+
+    <script type = "module" src = "meshfunctions.js"></script>
+</head>
+<body>
+<div>
+    <p>This is a very simplified mesh loading example.  We're using a stripped down mesh format based on the PLY format.
+    The assumption is that the file starts with two integers, the number of vertices and the number of triangles. Next comes
+    a list of xyz coordinates for each vertex, and then a list of vertex indices for each triangle.
+    </p>
+    <p>
+    A real PLY file would have a header describing the attributes contained in the file, and would probably have more
+    than just position information for each vertex.
+    </p>
+    <p>
+    This code is not terribly robust and will not handle poorly formed files well.
+    </p>
+</div>
+<div> Select mesh file:
+    <input type = "file" id="fileInput">
+</div>
+<canvas id = "gl-canvas" width="1280" height="768">
+    Sorry; you web browser doesn't support HTML5's canvas element.
+</canvas>
+</body>
+</html>

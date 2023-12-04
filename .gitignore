@@ -1,0 +1,5 @@
+# Project exclude paths
+/helperfunctions.js
+/helperfunctions.js.map
+/meshfunctions.js
+/meshfunctions.js.map
