@@ -14,6 +14,6 @@ void main(){
     //red is our x coordinate, green is our y coordinate, blue is our z coordinate
     //color = vec4(vNormal.xyz, 1); //Normal vector has w coordinate of 0
 
-    color = vec4(0.5, 0.5, 0.5, 1.0);
+    color = vPosition;
 
 }

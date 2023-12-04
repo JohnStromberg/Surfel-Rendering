@@ -17,6 +17,9 @@ let program:WebGLProgram;
 //uniform locations
 let umv:WebGLUniformLocation; //uniform for mv matrix
 let uproj:WebGLUniformLocation; //uniform for projection matrix
+let vPosition:GLint;
+let vNormal:GLint;
+let vColor:GLint;
 
 //matrices
 let mv:mat4; //local mv
@@ -51,10 +54,7 @@ window.onload = function init() {
     if (!gl) {
         alert("WebGL isn't available");
     }
-    ///////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////
-    //https://codepen.io/matt-west/pen/KjEHg
-    //converted to typescript by Nathan Gossett
+
     let fileInput:HTMLInputElement = document.getElementById("fileInput") as HTMLInputElement;
     fileInput.addEventListener('change', function(e){
         let file:File = fileInput.files[0];
@@ -85,6 +85,10 @@ window.onload = function init() {
 
     umv = gl.getUniformLocation(program, "mv");
     uproj = gl.getUniformLocation(program, "proj");
+    vPosition = gl.getAttribLocation(program, "vPosition");
+    vNormal = gl.getAttribLocation(program, "vNormal");
+    vColor = gl.getAttribLocation(program, "vColor");
+
 
     zoom = 10;
 
@@ -106,7 +110,6 @@ window.onload = function init() {
                     zoom += 5;
                 }
         }
-        console.log(zoom);
         p = perspective(zoom, (canvas.clientWidth / canvas.clientHeight), 1, 500);
         gl.uniformMatrix4fv(uproj, false, p.flatten());
         requestAnimationFrame(render);
@@ -153,34 +156,32 @@ function createMesh(input:string){
     meshVertexData = [];
     for(let i:number = 0; i < numVerts; i++){
         meshVertexData.push(positionData[i]);
-        //meshVertexData.push(normalData[i]);
-        //meshVertexData.push(colorData[i]);
+        meshVertexData.push(normalData[i]);
+        meshVertexData.push(colorData[i]);
     }
-
-    console.log(flatten(meshVertexData));
 
     //buffer vertex data and enable vPosition attribute
     meshVertexBufferID = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, meshVertexBufferID);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(meshVertexData), gl.STATIC_DRAW);
 
-    //Data is packed in groups of 4 floats which are 4 bytes each, 32 bytes total for position and color
-    // position                        Normal                   Color
+    //Data is packed in groups of 4 floats which are 4 bytes each, 48 bytes total for position, normals and color
+    //       position            Normal                   Color
     //  x   y   z    w        x    y       z      w      r      g    b     a
     // 0-3 4-7 8-11 12-15  16-19  20-23  24-27  28-31  32-35  36-39 40-43 44-47
 
 
-    let vPosition:GLint = gl.getAttribLocation(program, "vPosition");
-    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 16, 0);
+    vPosition = gl.getAttribLocation(program, "vPosition");
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 48, 0);
     gl.enableVertexAttribArray(vPosition);
 
-    // let vNormal:GLint = gl.getAttribLocation(program, "vNormal");
-    // gl.vertexAttribPointer(vNormal, 4, gl.FLOAT, false, 48, 16);
-    // gl.enableVertexAttribArray(vNormal);
-    //
-    // let vColor:GLint = gl.getAttribLocation(program, "vColor");
-    // gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 48, 32);
-    // gl.enableVertexAttribArray(vColor);
+    vNormal = gl.getAttribLocation(program, "vNormal");
+    gl.vertexAttribPointer(vNormal, 4, gl.FLOAT, false, 48, 16);
+    gl.enableVertexAttribArray(vNormal);
+
+    vColor = gl.getAttribLocation(program, "vColor");
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 48, 32);
+    gl.enableVertexAttribArray(vColor);
 
 
 }
