@@ -8,6 +8,6 @@ out vec4 fragColor;
 
 void main(){
 
+    //fragColor = fcolor;
     fragColor = vec4(fNormal.xyz, 1.0);
-
 }

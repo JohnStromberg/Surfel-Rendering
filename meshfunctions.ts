@@ -55,18 +55,7 @@ window.onload = function init() {
         alert("WebGL isn't available");
     }
 
-    let fileInput:HTMLInputElement = document.getElementById("fileInput") as HTMLInputElement;
-    fileInput.addEventListener('change', function(e){
-        let file:File = fileInput.files[0];
-        let reader:FileReader = new FileReader();
-        reader.onload = function(e){
-            createPointCloud(reader.result as string); //ok, we have our data, so parse it
-            requestAnimationFrame(render); //ask for a new frame
-        };
-        reader.readAsText(file);
-    });
-    ////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////
+    readTextFile("./Point Clouds/Cone v2.ply");
 
     //allow the user to rotate mesh with the mouse
     canvas.addEventListener("mousedown", mouse_down);
@@ -100,15 +89,23 @@ window.onload = function init() {
     //This function executes whenever a user hits a key
     window.addEventListener("keydown" ,function(event){
         switch(event.key) {
-            case "ArrowUp":
-                if(zoom > 5) {
-                    zoom -= 5;
-                }
-                break;
-            case "ArrowDown":
-                if(zoom < 170) {
-                    zoom += 5;
-                }
+
+        }
+    });
+
+    window.addEventListener('wheel', function(event) {
+        // Get the distance that the mouse wheel was rotated
+        const delta = event.deltaY;
+        if (delta > 0) {
+            if(zoom < 170) {
+                zoom += 2;
+            }
+        // The wheel was rotated upwards or away from the user
+        } else if (delta < 0) {
+            if(zoom > 1) {
+                zoom -= 2;
+            }
+        // The wheel was rotated downwards or towards the user
         }
         p = perspective(zoom, (canvas.clientWidth / canvas.clientHeight), 1, 500);
         gl.uniformMatrix4fv(uproj, false, p.flatten());
@@ -120,6 +117,16 @@ window.onload = function init() {
     xAngle = 0;
     yAngle = 0;
 };
+
+function readTextFile(filePath:string) {
+    fetch(filePath)
+        .then(response => response.text())
+        .then(text => {
+            createPointCloud(text as string) //ok, we have our data, so parse it
+            requestAnimationFrame(render) //ask for a new frame
+        })
+    // outputs the content of the text file
+}
 
 /**
  * Creates a point cloud from a .ply file
@@ -141,13 +148,6 @@ function createPointCloud(input:string){
         normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
         colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
     }
-
-
-    //at this point, every vertex normal is the sum of all the normal vectors of the triangles that meet up at that vertex
-    //so normalize to get a unit length average normal direction for the vertex
-    // for(let i:number = 0; i < normalData.length; i++){
-    //     normalData[i] = normalData[i].normalize();
-    // }
 
     //and put that all together into an array so we can buffer it to graphics memory
     meshVertexData = [];
@@ -217,7 +217,6 @@ function render(){
 
     //position camera 10 units back from origin
     mv = lookAt(new vec4(0, 0, 2, 1), new vec4(0, 0, 0, 1), new vec4(0, 1, 0, 0));
-
     //rotate if the user has been dragging the mouse around
     mv = mv.mult(rotateY(yAngle).mult(rotateX(xAngle)));
 
