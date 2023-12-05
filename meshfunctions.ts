@@ -60,7 +60,7 @@ window.onload = function init() {
         let file:File = fileInput.files[0];
         let reader:FileReader = new FileReader();
         reader.onload = function(e){
-            createMesh(reader.result as string); //ok, we have our data, so parse it
+            createPointCloud(reader.result as string); //ok, we have our data, so parse it
             requestAnimationFrame(render); //ask for a new frame
         };
         reader.readAsText(file);
@@ -90,7 +90,7 @@ window.onload = function init() {
     vColor = gl.getAttribLocation(program, "vColor");
 
 
-    zoom = 10;
+    zoom = 5;
 
     //set up basic perspective viewing
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -101,7 +101,7 @@ window.onload = function init() {
     window.addEventListener("keydown" ,function(event){
         switch(event.key) {
             case "ArrowUp":
-                if(zoom > 10) {
+                if(zoom > 5) {
                     zoom -= 5;
                 }
                 break;
@@ -122,17 +122,14 @@ window.onload = function init() {
 };
 
 /**
- * Parse string into list of vertices and triangles
- * Not robust at all, but simple enough to follow as an introduction
+ * Creates a point cloud from a .ply file
  * @param input string of ascii floats
  */
-function createMesh(input:string){
+function createPointCloud(input:string){
     //Splits the file so that every word/number is on a new line
     let numbers:string[] = input.split(/\s+/);
-    console.log(numbers);
     //The 9th element is the number of vertices
     numVerts = parseInt(numbers[9]);
-    console.log(numVerts)
     let positionData:vec4[] = [];
     let normalData:vec4[] = [];
     let colorData:vec4[] = [];
@@ -141,8 +138,8 @@ function createMesh(input:string){
     //
     for(let i:number = 49; i < 10*numVerts + 49; i+= 10){
         positionData.push(new vec4(parseFloat(numbers[i]), parseFloat(numbers[i+1]), parseFloat(numbers[i+2]), 1));
-        normalData.push(new vec4(parseInt(numbers[i+3]), parseInt(numbers[i+4]), parseInt(numbers[i+5]), 0));
-        colorData.push(new vec4(parseFloat(numbers[i+6]), parseFloat(numbers[i+7]), parseFloat(numbers[i+8]), parseFloat(numbers[i+9])));
+        normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
+        colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
     }
 
 
@@ -159,7 +156,6 @@ function createMesh(input:string){
         meshVertexData.push(normalData[i]);
         meshVertexData.push(colorData[i]);
     }
-
     //buffer vertex data and enable vPosition attribute
     meshVertexBufferID = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, meshVertexBufferID);
@@ -231,11 +227,13 @@ function render(){
     //if we've loaded a mesh, draw it
     if(meshVertexData.length > 0) {
         gl.bindBuffer(gl.ARRAY_BUFFER, indexBufferID);
-        //note that we're using gl.drawElements() here instead of drawArrays()
-        //this allows us to make use of shared vertices between triangles without
-        //having to repeat the vertex data.  However, if each vertex has additional
-        //attributes like color, normal vector, texture coordinates, etc that are not
-        //shared between triangles like position is, than this might cause problems
+        // console.log(meshVertexData);
+        // for(let i = 0; i < meshVertexData.length; i++) {
+        //
+        // }
         gl.drawArrays(gl.POINTS, 0, numVerts);
     }
 }
+
+
+//https://www.numerical-tours.com/matlab/graphics_1_synthesis_gaussian/

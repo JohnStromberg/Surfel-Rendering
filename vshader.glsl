@@ -5,7 +5,10 @@ uniform mat4 proj;
 in vec4 vPosition;
 in vec4 vNormal;
 in vec4 vColor;
-out vec4 color;
+
+out vec4 fcolor;
+out vec4 fNormal;
+out vec4 fPosition;
 
 void main(){
     gl_Position = proj*mv*vPosition;
@@ -14,6 +17,7 @@ void main(){
     //red is our x coordinate, green is our y coordinate, blue is our z coordinate
     //color = vec4(vNormal.xyz, 1); //Normal vector has w coordinate of 0
 
-    color = vPosition;
-
+    fNormal = vNormal;
+    fcolor = vColor;
+    fPosition = vPosition;
 }

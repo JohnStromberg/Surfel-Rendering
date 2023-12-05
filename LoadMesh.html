@@ -7,19 +7,7 @@
     <script type = "module" src = "meshfunctions.js"></script>
 </head>
 <body>
-<div>
-    <p>This is a very simplified mesh loading example.  We're using a stripped down mesh format based on the PLY format.
-    The assumption is that the file starts with two integers, the number of vertices and the number of triangles. Next comes
-    a list of xyz coordinates for each vertex, and then a list of vertex indices for each triangle.
-    </p>
-    <p>
-    A real PLY file would have a header describing the attributes contained in the file, and would probably have more
-    than just position information for each vertex.
-    </p>
-    <p>
-    This code is not terribly robust and will not handle poorly formed files well.
-    </p>
-</div>
+
 <div> Select mesh file:
     <input type = "file" id="fileInput">
 </div>
