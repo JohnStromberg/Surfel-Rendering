@@ -31,6 +31,12 @@ let numVerts:number;
 //amount of zoom
 let zoom:number;
 
+//The amount of offset used to make the quads
+let xOffSet:number;
+let yOffSet:number;
+
+let onPoints;
+
 //document elements
 let canvas:HTMLCanvasElement;
 
@@ -79,8 +85,10 @@ window.onload = function init() {
     vColor = gl.getAttribLocation(program, "vColor");
 
 
-    zoom = 5;
-
+    zoom = 45;
+    xOffSet = 0.01;
+    yOffSet = 0.003;
+    onPoints = true;
     //set up basic perspective viewing
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     p = perspective(zoom, (canvas.clientWidth / canvas.clientHeight), 1, 500);
@@ -102,7 +110,7 @@ window.onload = function init() {
             }
         // The wheel was rotated upwards or away from the user
         } else if (delta < 0) {
-            if(zoom > 1) {
+            if(zoom > 10) {
                 zoom -= 2;
             }
         // The wheel was rotated downwards or towards the user
@@ -143,18 +151,48 @@ function createPointCloud(input:string){
 
     //The 49th position is the first position with actual data in it
     //
-    for(let i:number = 49; i < 10*numVerts + 49; i+= 10){
-        positionData.push(new vec4(parseFloat(numbers[i]), parseFloat(numbers[i+1]), parseFloat(numbers[i+2]), 1));
-        normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
-        colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
+    if(onPoints) {
+        for(let i:number = 49; i < 10*numVerts + 49; i+= 10){
+            positionData.push(new vec4(parseFloat(numbers[i]) * 10, parseFloat(numbers[i+1]) * 10, parseFloat(numbers[i+2]) * 10, 1));
+            normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
+            colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
+        }
+    } else {
+        for(let i:number = 49; i < 10*numVerts + 49; i+= 10){
+            positionData.push(new vec4((parseFloat(numbers[i]) * 10) + xOffSet, (parseFloat(numbers[i+1]) * 10) + yOffSet, parseFloat(numbers[i+2]) * 10, 1));
+            normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
+            colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
+
+            positionData.push(new vec4((parseFloat(numbers[i]) * 10) - xOffSet, (parseFloat(numbers[i+1]) * 10) + yOffSet, parseFloat(numbers[i+2]) * 10, 1));
+            normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
+            colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
+
+            positionData.push(new vec4((parseFloat(numbers[i]) * 10) + xOffSet, (parseFloat(numbers[i+1]) * 10) - yOffSet, parseFloat(numbers[i+2]) * 10, 1));
+            normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
+            colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
+
+            positionData.push(new vec4((parseFloat(numbers[i]) * 10) - xOffSet, (parseFloat(numbers[i+1]) * 10) - yOffSet, parseFloat(numbers[i+2]) * 10, 1));
+            normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
+            colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
+        }
     }
 
     //and put that all together into an array so we can buffer it to graphics memory
     meshVertexData = [];
-    for(let i:number = 0; i < numVerts; i++){
-        meshVertexData.push(positionData[i]);
-        meshVertexData.push(normalData[i]);
-        meshVertexData.push(colorData[i]);
+    //If on points we only have 1 point per vertex
+    //but is not on points we have 4 per vertex
+    if(onPoints) {
+        for(let i:number = 0; i < numVerts; i++){
+            meshVertexData.push(positionData[i]);
+            meshVertexData.push(normalData[i]);
+            meshVertexData.push(colorData[i]);
+        }
+    } else {
+        for (let i: number = 0; i < numVerts * 4; i++) {
+            meshVertexData.push(positionData[i]);
+            meshVertexData.push(normalData[i]);
+            meshVertexData.push(colorData[i]);
+        }
     }
     //buffer vertex data and enable vPosition attribute
     meshVertexBufferID = gl.createBuffer();
@@ -223,14 +261,15 @@ function render(){
     //send the modelview matrix over
     gl.uniformMatrix4fv(umv, false, mv.flatten());
 
-    //if we've loaded a mesh, draw it
-    if(meshVertexData.length > 0) {
-        gl.bindBuffer(gl.ARRAY_BUFFER, indexBufferID);
-        // console.log(meshVertexData);
-        // for(let i = 0; i < meshVertexData.length; i++) {
-        //
-        // }
-        gl.drawArrays(gl.POINTS, 0, numVerts);
+    if(onPoints) {
+        if(meshVertexData.length > 0) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, indexBufferID);
+            gl.drawArrays(gl.POINTS, 0, numVerts);
+        }
+    } else {
+        for(let i = 0; i < numVerts * 4; i++) {
+            gl.drawArrays(gl.TRIANGLE_STRIP, i*4, 4);
+        }
     }
 }
 
