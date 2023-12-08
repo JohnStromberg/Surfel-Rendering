@@ -7,7 +7,7 @@ import {
     lookAt,
     rotateX,
     rotateY,
-    initFileShaders
+    initFileShaders, rotateZ
 } from "./helperfunctions.js";
 
 "use strict";
@@ -30,6 +30,9 @@ let numVerts:number;
 
 //amount of zoom
 let zoom:number;
+
+//We need the normal vectors to rotate each quad
+let normalData:vec4[]
 
 //The amount of offset used to make the quads
 let xOffSet:number;
@@ -70,6 +73,7 @@ window.onload = function init() {
 
     //start as blank arrays
     meshVertexData = [];
+    normalData = [];
 
     //white background
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -88,7 +92,7 @@ window.onload = function init() {
     zoom = 45;
     xOffSet = 0.01;
     yOffSet = 0.003;
-    onPoints = true;
+    onPoints = false;
     //set up basic perspective viewing
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     p = perspective(zoom, (canvas.clientWidth / canvas.clientHeight), 1, 500);
@@ -146,7 +150,6 @@ function createPointCloud(input:string){
     //The 9th element is the number of vertices
     numVerts = parseInt(numbers[9]);
     let positionData:vec4[] = [];
-    let normalData:vec4[] = [];
     let colorData:vec4[] = [];
 
     //The 49th position is the first position with actual data in it
@@ -194,6 +197,7 @@ function createPointCloud(input:string){
             meshVertexData.push(colorData[i]);
         }
     }
+
     //buffer vertex data and enable vPosition attribute
     meshVertexBufferID = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, meshVertexBufferID);
@@ -261,13 +265,18 @@ function render(){
     //send the modelview matrix over
     gl.uniformMatrix4fv(umv, false, mv.flatten());
 
+
     if(onPoints) {
         if(meshVertexData.length > 0) {
             gl.bindBuffer(gl.ARRAY_BUFFER, indexBufferID);
             gl.drawArrays(gl.POINTS, 0, numVerts);
         }
     } else {
-        for(let i = 0; i < numVerts * 4; i++) {
+        for(let i = 0; i < numVerts; i++) {
+            //console.log(normalData[0][index]);
+            //mv = mv.mult(rotateX(normalData[i][0]).mult(rotateY(normalData[i][1]).mult(rotateZ(normalData[i][2]))));
+            //Math.atan()
+            gl.uniformMatrix4fv(umv, false, mv.flatten());
             gl.drawArrays(gl.TRIANGLE_STRIP, i*4, 4);
         }
     }
