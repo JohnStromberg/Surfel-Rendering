@@ -275,7 +275,6 @@ function render(){
         for(let i = 0; i < numVerts; i++) {
             //console.log(normalData[0][index]);
             //mv = mv.mult(rotateX(normalData[i][0]).mult(rotateY(normalData[i][1]).mult(rotateZ(normalData[i][2]))));
-            //Math.atan()
             gl.uniformMatrix4fv(umv, false, mv.flatten());
             gl.drawArrays(gl.TRIANGLE_STRIP, i*4, 4);
         }
