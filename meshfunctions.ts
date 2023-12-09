@@ -7,7 +7,9 @@ import {
     lookAt,
     rotateX,
     rotateY,
-    initFileShaders, rotateZ
+    initFileShaders,
+    rotateZ,
+    toradians, todegrees
 } from "./helperfunctions.js";
 
 "use strict";
@@ -261,7 +263,6 @@ function render(){
     mv = lookAt(new vec4(0, 0, 2, 1), new vec4(0, 0, 0, 1), new vec4(0, 1, 0, 0));
     //rotate if the user has been dragging the mouse around
     mv = mv.mult(rotateY(yAngle).mult(rotateX(xAngle)));
-
     //send the modelview matrix over
     gl.uniformMatrix4fv(umv, false, mv.flatten());
 
@@ -273,9 +274,13 @@ function render(){
         }
     } else {
         for(let i = 0; i < numVerts; i++) {
-            //console.log(normalData[0][index]);
-            //mv = mv.mult(rotateX(normalData[i][0]).mult(rotateY(normalData[i][1]).mult(rotateZ(normalData[i][2]))));
-            gl.uniformMatrix4fv(umv, false, mv.flatten());
+            // let xangle = todegrees(Math.acos(normalData[i][0]));
+            // let yangle = todegrees(Math.acos(normalData[i][1]));
+            // let zangle = todegrees(Math.acos(normalData[i][2]));
+            //mv = mv.mult(rotateX(xangle).mult(rotateY(yangle).mult(rotateZ(zangle))));
+            //mv = mv.mult(rotateZ(90));
+            //gl.uniformMatrix4fv(umv, false, mv.flatten());
+
             gl.drawArrays(gl.TRIANGLE_STRIP, i*4, 4);
         }
     }
@@ -283,3 +288,9 @@ function render(){
 
 
 //https://www.numerical-tours.com/matlab/graphics_1_synthesis_gaussian/
+
+//Look at change of coord matrices from the lextures
+//Only need to change 1 direction since the texture will take care of it
+//https://moodle.bethel.edu/pluginfile.php/3782358/mod_resource/content/0/COS320Fa2023-09-Viewing.pdf
+
+//I think I need to use linear filtering.
