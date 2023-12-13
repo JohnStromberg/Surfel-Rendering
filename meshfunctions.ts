@@ -23,6 +23,7 @@ let vPosition:GLint;
 let vNormal:GLint;
 let vColor:GLint;
 let vTexCoord:GLint;
+let vTangentCoord:GLint;
 
 //matrices
 let mv:mat4; //local mv
@@ -38,9 +39,6 @@ let zoom:number;
 let filterTex:WebGLTexture;
 //this will be a pointer to our sampler2D
 let uTextureSampler:WebGLUniformLocation;
-
-//We need the normal vectors to rotate each quad
-let normalData:vec4[]
 
 //The amount of offset used to make the quads
 let xOffSet:number;
@@ -84,7 +82,6 @@ window.onload = function init() {
 
     //start as blank arrays
     meshVertexData = [];
-    normalData = [];
 
     //white background
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -98,13 +95,14 @@ window.onload = function init() {
     vPosition = gl.getAttribLocation(program, "vPosition");
     vNormal = gl.getAttribLocation(program, "vNormal");
     vColor = gl.getAttribLocation(program, "vColor");
+    vTangentCoord = gl.getAttribLocation(program, "vTangent");
     vTexCoord = gl.getAttribLocation(program, "vTexCoord");
     uTextureSampler = gl.getUniformLocation(program, "textureSampler");
     onPointsUniform = gl.getUniformLocation(program, "onPoints");
 
     zoom = 45;
-    xOffSet = 0.01;
-    yOffSet = 0.003;
+    xOffSet = 0.03;
+    yOffSet = 0.009;
     onPoints = false;
     gl.uniform1i(onPointsUniform, 0);
     //set up basic perspective viewing
@@ -164,8 +162,10 @@ function createPointCloud(input:string){
     //The 9th element is the number of vertices
     numVerts = parseInt(numbers[9]);
     let positionData:vec4[] = [];
+    let normalData:vec4[] = [];
     let colorData:vec4[] = [];
     let textureCoords:vec2[] = [];
+    let tangentCoord:vec4[] = [];
 
     //The 49th position is the first position with actual data in it
     //
@@ -175,30 +175,40 @@ function createPointCloud(input:string){
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(0, 0));
+            tangentCoord.push(new vec4(1,0,0,0));
         }
     } else {
         for(let i:number = 49; i < 10*numVerts + 49; i+= 10){
+            //Top right point
             positionData.push(new vec4((parseFloat(numbers[i]) * 10) + xOffSet, (parseFloat(numbers[i+1]) * 10) + yOffSet, parseFloat(numbers[i+2]) * 10, 1));
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(1, 1));
+            tangentCoord.push(new vec4(1,0,0,0));
 
+            //Bottom right point
             positionData.push(new vec4((parseFloat(numbers[i]) * 10) - xOffSet, (parseFloat(numbers[i+1]) * 10) + yOffSet, parseFloat(numbers[i+2]) * 10, 1));
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(1, 0));
+            tangentCoord.push(new vec4(1,0,0,0));
 
+            //Top left point
             positionData.push(new vec4((parseFloat(numbers[i]) * 10) + xOffSet, (parseFloat(numbers[i+1]) * 10) - yOffSet, parseFloat(numbers[i+2]) * 10, 1));
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(0, 1));
+            tangentCoord.push(new vec4(1,0,0,0));
 
+            //Bottom left point
             positionData.push(new vec4((parseFloat(numbers[i]) * 10) - xOffSet, (parseFloat(numbers[i+1]) * 10) - yOffSet, parseFloat(numbers[i+2]) * 10, 1));
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(0, 0));
+            tangentCoord.push(new vec4(1,0,0,0));
         }
     }
+
 
     //and put that all together into an array so we can buffer it to graphics memory
     meshVertexData = [];
@@ -208,6 +218,7 @@ function createPointCloud(input:string){
         meshVertexData.push(normalData[i]);
         meshVertexData.push(colorData[i]);
         meshVertexData.push(textureCoords[i]);
+        meshVertexData.push(tangentCoord[i]);
     }
 
     //buffer vertex data and enable vPosition attribute
@@ -216,26 +227,30 @@ function createPointCloud(input:string){
     gl.bufferData(gl.ARRAY_BUFFER, flatten(meshVertexData), gl.STATIC_DRAW);
 
     //Data is packed in groups of 4 floats which are 4 bytes each, 48 bytes total for position, normals and color
-    //       position            Normal                   Color                     Texture
-    //  x   y   z    w        x    y       z      w      r      g    b     a       x      y
-    // 0-3 4-7 8-11 12-15  16-19  20-23  24-27  28-31  32-35  36-39 40-43 44-47   48-51   52-55
+    //       position            Normal                   Color                     Texture           Tangent
+    //  x   y   z    w        x    y       z      w      r      g    b     a       x      y        x     y       z       a
+    // 0-3 4-7 8-11 12-15  16-19  20-23  24-27  28-31  32-35  36-39 40-43 44-47   48-51   52-55  56-59  60-63  64-67  68-71
 
 
     vPosition = gl.getAttribLocation(program, "vPosition");
-    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 56, 0);
+    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 72, 0);
     gl.enableVertexAttribArray(vPosition);
 
     vNormal = gl.getAttribLocation(program, "vNormal");
-    gl.vertexAttribPointer(vNormal, 4, gl.FLOAT, false, 56, 16);
+    gl.vertexAttribPointer(vNormal, 4, gl.FLOAT, false, 72, 16);
     gl.enableVertexAttribArray(vNormal);
 
     vColor = gl.getAttribLocation(program, "vColor");
-    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 56, 32);
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 72, 32);
     gl.enableVertexAttribArray(vColor);
 
     vTexCoord = gl.getAttribLocation(program, "texCoord");
-    gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 56, 48);
+    gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 72, 48);
     gl.enableVertexAttribArray(vTexCoord);
+
+    vTangentCoord = gl.getAttribLocation(program, "vTangent");
+    gl.vertexAttribPointer(vTangentCoord, 2, gl.FLOAT, false, 72, 56);
+    gl.enableVertexAttribArray(vTangentCoord);
 }
 
 function makeTexture() {
@@ -320,12 +335,10 @@ function render(){
     } else {
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-        gl.depthMask(false);
+        gl.activeTexture(gl.TEXTURE0); //we're using texture unit 0
+        gl.bindTexture(gl.TEXTURE_2D, filterTex); //we want checkerTex on that texture unit
+        gl.uniform1i(uTextureSampler, 0);
         for(let i = 0; i < numVerts; i++) {
-            gl.activeTexture(gl.TEXTURE0); //we're using texture unit 0
-            gl.bindTexture(gl.TEXTURE_2D, filterTex); //we want checkerTex on that texture unit
-            gl.uniform1i(uTextureSampler, 0);
-
             gl.drawArrays(gl.TRIANGLE_STRIP, i*4, 4);
         }
     }
