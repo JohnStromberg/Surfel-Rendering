@@ -100,22 +100,23 @@ window.onload = function init() {
     uTextureSampler = gl.getUniformLocation(program, "textureSampler");
     onPointsUniform = gl.getUniformLocation(program, "onPoints");
 
+    //These are the default values but all of them could change
     zoom = 45;
-    xOffSet = 0.03;
-    yOffSet = 0.009;
+    xOffSet = 0.025;
+    yOffSet = 0.0075;
     onPoints = false;
     gl.uniform1i(onPointsUniform, 0);
+
+    let pointInput:HTMLInputElement = document.getElementById("mode") as HTMLInputElement;
+    pointInput.addEventListener("change", getUserInputPoints);//call changeBGC() if clicked
+
+    let sliderInput:HTMLInputElement = document.getElementById("quadSlider") as HTMLInputElement;
+    sliderInput.addEventListener("change", sliderOnChange);//call changeBGC() if clicked
+
     //set up basic perspective viewing
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
     p = perspective(zoom, (canvas.clientWidth / canvas.clientHeight), 1, 500);
     gl.uniformMatrix4fv(uproj, false, p.flatten());
-
-    //This function executes whenever a user hits a key
-    window.addEventListener("keydown" ,function(event){
-        switch(event.key) {
-
-        }
-    });
 
     window.addEventListener('wheel', function(event) {
         // Get the distance that the mouse wheel was rotated
@@ -150,6 +151,28 @@ function readTextFile(filePath:string) {
             requestAnimationFrame(render) //ask for a new frame
         })
     // outputs the content of the text file
+}
+
+//This runs every time the user selects a points or surfels
+function getUserInputPoints() {
+    let result = this.value;
+    if(result === "points") {
+        onPoints = true;
+        gl.uniform1i(onPointsUniform, 1);
+    } else {
+        onPoints = false;
+        gl.uniform1i(onPointsUniform, 0);
+    }
+    readTextFile("./Point Clouds/Cone v2.ply");
+    requestAnimationFrame(render);
+}
+
+function sliderOnChange() {
+    let value:number = (this.value/2);
+    xOffSet = 0.01 * value;
+    yOffSet = 0.003 * value;
+    readTextFile("./Point Clouds/Cone v2.ply");
+    requestAnimationFrame(render);
 }
 
 /**
@@ -260,7 +283,7 @@ function makeTexture() {
     let mmtexture:Uint8Array = new Uint8Array(texHeight * texWidth * 4);
 
     let rowOneFiveValues:number[] = [0, 50, 100, 24.735, 0];
-    let rowTwoFourValues:number[] = [50, 255, 255, 255, 50];
+    let rowTwoFourValues:number[] = [50, 175, 255, 175, 50];
     let rowThreeValues:number[] = [100, 255, 255, 255, 100];
 
     for (let i:number = 0; i < texHeight; i++) {

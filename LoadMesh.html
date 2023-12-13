@@ -8,6 +8,22 @@
 </head>
 <body>
 
+<div>
+    <label for="mode">Select a mode:</label>
+    <select name="mode" id="mode">
+        <option value="surfels">Surfels</option>
+        <option value="points">Points</option>
+    </select> <br>
+    Point just renders the selected object with gl.POINTS <br>
+    Surfels was the part I made for my final project
+</div>
+
+<hr/>
+
+<div>
+    <label for="quadSlider">This slider controls the sizes of the quads: </label><input type="range" min="1" max="10" value="5" class="slider" id="quadSlider">
+    <br> Please be patient, it takes a few seconds to update
+</div>
 
 <canvas id = "gl-canvas" width="1280" height="768">
     Sorry; you web browser doesn't support HTML5's canvas element.
