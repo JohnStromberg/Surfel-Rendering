@@ -2,7 +2,6 @@
 precision mediump float;
 in vec4 fcolor;
 in vec2 ftexCoord;
-in vec4 fNormal;
 
 out vec4 fragColor;
 
@@ -14,6 +13,5 @@ void main(){
         fragColor = fcolor;
     } else {
         fragColor = vec4(fcolor.xyz, texture(textureSampler, ftexCoord).a);
-        //fragColor = fcolor;
     }
 }

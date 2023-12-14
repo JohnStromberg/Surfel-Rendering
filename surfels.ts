@@ -1,5 +1,5 @@
+//Imports from helper functions
 import {
-    initShaders,
     vec4,
     mat4,
     flatten,
@@ -8,8 +8,7 @@ import {
     rotateX,
     rotateY,
     initFileShaders,
-    rotateZ,
-    toradians, todegrees, vec2
+    vec2
 } from "./helperfunctions.js";
 
 "use strict";
@@ -25,7 +24,7 @@ let vColor:GLint;
 let vTexCoord:GLint;
 let basicSquareCoord:GLint;
 
-//matrices
+//Matrices
 let mv:mat4; //local mv
 let p:mat4; //local projection
 
@@ -52,7 +51,7 @@ let onPointsUniform:WebGLUniformLocation;
 //The current point cloud the user has selected
 let currPointCloud:string;
 
-//document elements
+//Document elements
 let canvas:HTMLCanvasElement;
 
 //interaction and rotation state
@@ -76,6 +75,7 @@ window.onload = function init() {
         alert("WebGL isn't available");
     }
 
+    //Default point cloud is a cone
     currPointCloud = "Cone";
     makeTexture();
     readTextFile("./Point Clouds/" + currPointCloud + ".ply");
@@ -129,6 +129,7 @@ window.onload = function init() {
     p = perspective(zoom, (canvas.clientWidth / canvas.clientHeight), 1, 500);
     gl.uniformMatrix4fv(uproj, false, p.flatten());
 
+    //Event listener for when the scroll wheel is changed
     window.addEventListener('wheel', function(event) {
         // Get the distance that the mouse wheel was rotated
         const delta = event.deltaY;
@@ -136,12 +137,10 @@ window.onload = function init() {
             if(zoom < 170) {
                 zoom += 2;
             }
-        // The wheel was rotated upwards or away from the user
         } else if (delta < 0) {
             if(zoom > 10) {
                 zoom -= 2;
             }
-        // The wheel was rotated downwards or towards the user
         }
         p = perspective(zoom, (canvas.clientWidth / canvas.clientHeight), 1, 500);
         gl.uniformMatrix4fv(uproj, false, p.flatten());
@@ -154,6 +153,8 @@ window.onload = function init() {
     yAngle = 0;
 };
 
+//This fetchs the local file from the directory
+//and then calls createPointCloud
 function readTextFile(filePath:string) {
     fetch(filePath)
         .then(response => response.text())
@@ -164,7 +165,7 @@ function readTextFile(filePath:string) {
     // outputs the content of the text file
 }
 
-//This runs every time the user changes betweens points or surfels
+//This runs every time the user changes between points or surfels
 function getUserInputPoints() {
     let result = this.value;
     if(result === "points") {
@@ -190,6 +191,7 @@ function getUserInputDatasets() {
     requestAnimationFrame(render);
 }
 
+//This runs every time the slider changes value
 function sliderOnChange() {
     let value:number = (this.value/2);
     xOffSet = 0.01 * value;
@@ -198,15 +200,14 @@ function sliderOnChange() {
     requestAnimationFrame(render);
 }
 
-/**
- * Creates a point cloud from a .ply file
- * @param input string of ascii floats
- */
+//Creates a point cloud from a string
+//The string is a ply file in ascii
 function createPointCloud(input:string){
     //Splits the file so that every word/number is on a new line
     let numbers:string[] = input.split(/\s+/);
     //The 9th element is the number of vertices
     numVerts = parseInt(numbers[9]);
+    //Initializes all the arrays to empty
     let positionData:vec4[] = [];
     let normalData:vec4[] = [];
     let colorData:vec4[] = [];
@@ -214,20 +215,20 @@ function createPointCloud(input:string){
     let squareCoords:vec4[] = [];
 
     //The 49th position is the first position with actual data in it
-    //
+    //If on points we only need 1 vertex per point
     if(onPoints) {
         for(let i:number = 49; i < 10*numVerts + 49; i+= 10){
             positionData.push(new vec4(parseFloat(numbers[i]) * 10, parseFloat(numbers[i+1]) * 10, parseFloat(numbers[i+2]) * 10, 1));
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(0, 0));
-            squareCoords.push(new vec4(1,0,0,0));
+            squareCoords.push(new vec4(0,0,0,0));
         }
     } else {
+        //If not on points, we need 4 vertices per point
         for(let i:number = 49; i < 10*numVerts + 49; i+= 10){
             //Top right point
             positionData.push(new vec4((parseFloat(numbers[i]) * 10), (parseFloat(numbers[i+1]) * 10) + yOffSet, (parseFloat(numbers[i+2]) * 10) + xOffSet, 1));
-            //positionData.push(new vec4(parseFloat(numbers[i]) * 10, parseFloat(numbers[i+1]) * 10, parseFloat(numbers[i+2]) * 10, 1));
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(1, 1));
@@ -235,7 +236,6 @@ function createPointCloud(input:string){
 
             //Bottom right point
             positionData.push(new vec4((parseFloat(numbers[i]) * 10), (parseFloat(numbers[i+1]) * 10) + yOffSet, (parseFloat(numbers[i+2]) * 10) - xOffSet, 1));
-            //positionData.push(new vec4(parseFloat(numbers[i]) * 10, parseFloat(numbers[i+1]) * 10, parseFloat(numbers[i+2]) * 10, 1));
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(1, 0));
@@ -243,7 +243,6 @@ function createPointCloud(input:string){
 
             //Top left point
             positionData.push(new vec4((parseFloat(numbers[i]) * 10), (parseFloat(numbers[i+1]) * 10) - yOffSet, (parseFloat(numbers[i+2]) * 10) + xOffSet, 1));
-            //positionData.push(new vec4(parseFloat(numbers[i]) * 10, parseFloat(numbers[i+1]) * 10, parseFloat(numbers[i+2]) * 10, 1));
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(0, 1));
@@ -251,18 +250,14 @@ function createPointCloud(input:string){
 
             //Bottom left point
             positionData.push(new vec4((parseFloat(numbers[i]) * 10), (parseFloat(numbers[i+1]) * 10) - yOffSet, (parseFloat(numbers[i+2]) * 10) - xOffSet, 1));
-            //positionData.push(new vec4(parseFloat(numbers[i]) * 10, parseFloat(numbers[i+1]) * 10, parseFloat(numbers[i+2]) * 10, 1));
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(0, 0));
             squareCoords.push(new vec4(0,-0.01,-0.01,0));
         }
     }
-
-
-    //and put that all together into an array so we can buffer it to graphics memory
+    //Combine all of our arrays into 1 array to send to the buffer
     meshVertexData = [];
-
     for (let i: number = 0; i < positionData.length; i++) {
         meshVertexData.push(positionData[i]);
         meshVertexData.push(normalData[i]);
@@ -271,13 +266,13 @@ function createPointCloud(input:string){
         meshVertexData.push(squareCoords[i]);
     }
 
-    //buffer vertex data and enable vPosition attribute
+    //Send over the buffer data
     meshVertexBufferID = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, meshVertexBufferID);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(meshVertexData), gl.STATIC_DRAW);
 
     //Data is packed in groups of 4 floats which are 4 bytes each, 48 bytes total for position, normals and color
-    //       position            Normal                   Color                     Texture           Tangent
+    //       position            Normal                   Color                     Texture           Sqaure
     //  x   y   z    w        x    y       z      w      r      g    b     a       x      y        x     y       z       a
     // 0-3 4-7 8-11 12-15  16-19  20-23  24-27  28-31  32-35  36-39 40-43 44-47   48-51   52-55  56-59  60-63  64-67  68-71
 
@@ -303,12 +298,15 @@ function createPointCloud(input:string){
     gl.enableVertexAttribArray(basicSquareCoord);
 }
 
+//This makes a 5x5 simple gaussian filter texture
 function makeTexture() {
     const texHeight:number = 5;
     const texWidth:number = 5;
     //mmtexture is the main memory texture
     let mmtexture:Uint8Array = new Uint8Array(texHeight * texWidth * 4);
 
+    //The values for the texture
+    //This texture is symmetric so we only need 3 arrays instead of 5
     let rowOneFiveValues:number[] = [0, 50, 100, 50, 0];
     let rowTwoFourValues:number[] = [50, 175, 255, 175, 50];
     let rowThreeValues:number[] = [100, 255, 255, 255, 100];
@@ -327,14 +325,12 @@ function makeTexture() {
             }
         }
     }
-    //now create a texture object [in graphics memory hopefully]
     filterTex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, filterTex);
-    //this is a 2D texture, full resolution (level 0), RGBA now, texWidth by texHeight texels big, has no border
-    // and should also be RGBA in video memory, currently each
-    //texel is stored as unsigned bytes, and you can find all the texels in mmtexture
+
+    //We create the texture and we turn on linear filtering
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, texWidth, texHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, mmtexture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);//try different min and mag filters
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 }
 
@@ -371,18 +367,19 @@ function mouse_up(){
 function render(){
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    //position camera 10 units back from origin
+    //position camera 2 units back from origin
     mv = lookAt(new vec4(0, 0, 2, 1), new vec4(0, 0, 0, 1), new vec4(0, 1, 0, 0));
     //rotate if the user has been dragging the mouse around
     mv = mv.mult(rotateY(yAngle).mult(rotateX(xAngle)));
     //send the modelview matrix over
     gl.uniformMatrix4fv(umv, false, mv.flatten());
 
-
     if(onPoints) {
+        //If on points, just draw gl.POINTSx
         gl.bindBuffer(gl.ARRAY_BUFFER, indexBufferID);
         gl.drawArrays(gl.POINTS, 0, numVerts);
     } else {
+        //If not on points, draw triangle strips
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
         gl.activeTexture(gl.TEXTURE0); //we're using texture unit 0
@@ -393,12 +390,3 @@ function render(){
         }
     }
 }
-
-
-//https://www.numerical-tours.com/matlab/graphics_1_synthesis_gaussian/
-
-//Look at change of coord matrices from the lextures
-//Only need to change 1 direction since the texture will take care of it
-//https://moodle.bethel.edu/pluginfile.php/3782358/mod_resource/content/0/COS320Fa2023-09-Viewing.pdf
-
-//I think I need to use linear filtering.

@@ -2,21 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Mesh Loading Example</title>
+    <title>Surfel Rendering</title>
 
-    <script type = "module" src = "meshfunctions.js"></script>
+    <script type = "module" src = "surfels.js"></script>
 </head>
 <body>
 
 <div class="controls" style="display: flex; flex-direction: row;">
-    <div>
+    <div style="padding: 1rem;">
         <label for="mode">Select a mode:</label>
         <select name="mode" id="mode">
             <option value="surfels">Surfels</option>
             <option value="points">Points</option>
         </select> <br>
-        Point just renders the selected object with gl.POINTS <br>
-        Surfels was the part I made for my final project
     </div>
 
     <div style="border-left: 1px solid #000; height: 75px;"></div>
