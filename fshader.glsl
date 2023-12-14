@@ -14,6 +14,6 @@ void main(){
         fragColor = fcolor;
     } else {
         fragColor = vec4(fcolor.xyz, texture(textureSampler, ftexCoord).a);
-        //fragColor = vec4(fNormal.xyz, 1.0);
+        //fragColor = fcolor;
     }
 }
