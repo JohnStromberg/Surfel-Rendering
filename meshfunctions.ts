@@ -44,9 +44,13 @@ let uTextureSampler:WebGLUniformLocation;
 let xOffSet:number;
 let yOffSet:number;
 
+//1 if user selected points
+//0 if the user selected surfels
 let onPoints;
 let onPointsUniform:WebGLUniformLocation;
 
+//The current point cloud the user has selected
+let currPointCloud:string;
 
 //document elements
 let canvas:HTMLCanvasElement;
@@ -72,8 +76,9 @@ window.onload = function init() {
         alert("WebGL isn't available");
     }
 
+    currPointCloud = "Cone";
     makeTexture();
-    readTextFile("./Point Clouds/Cone v2.ply");
+    readTextFile("./Point Clouds/" + currPointCloud + ".ply");
 
     //allow the user to rotate mesh with the mouse
     canvas.addEventListener("mousedown", mouse_down);
@@ -107,11 +112,17 @@ window.onload = function init() {
     onPoints = false;
     gl.uniform1i(onPointsUniform, 0);
 
+    //Dropdown for when the user switches between points and surfels
     let pointInput:HTMLInputElement = document.getElementById("mode") as HTMLInputElement;
-    pointInput.addEventListener("change", getUserInputPoints);//call changeBGC() if clicked
+    pointInput.addEventListener("change", getUserInputPoints);
 
+    //Dropdown for when the user switches between data sets
+    let datasetInput:HTMLInputElement = document.getElementById("data") as HTMLInputElement;
+    datasetInput.addEventListener("change", getUserInputDatasets);
+
+    //The slider that controls the quad size
     let sliderInput:HTMLInputElement = document.getElementById("quadSlider") as HTMLInputElement;
-    sliderInput.addEventListener("change", sliderOnChange);//call changeBGC() if clicked
+    sliderInput.addEventListener("change", sliderOnChange);
 
     //set up basic perspective viewing
     gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
@@ -153,7 +164,7 @@ function readTextFile(filePath:string) {
     // outputs the content of the text file
 }
 
-//This runs every time the user selects a points or surfels
+//This runs every time the user changes betweens points or surfels
 function getUserInputPoints() {
     let result = this.value;
     if(result === "points") {
@@ -163,7 +174,19 @@ function getUserInputPoints() {
         onPoints = false;
         gl.uniform1i(onPointsUniform, 0);
     }
-    readTextFile("./Point Clouds/Cone v2.ply");
+    readTextFile("./Point Clouds/" + currPointCloud + ".ply");
+    requestAnimationFrame(render);
+}
+
+//This runs every time the user changes the data set
+function getUserInputDatasets() {
+    let result = this.value;
+    if(result === "cone") {
+        currPointCloud = "Cone";
+    } else if(result === "fries"){
+        currPointCloud = "Fries";
+    }
+    readTextFile("./Point Clouds/" + currPointCloud + ".ply");
     requestAnimationFrame(render);
 }
 
@@ -171,7 +194,7 @@ function sliderOnChange() {
     let value:number = (this.value/2);
     xOffSet = 0.01 * value;
     yOffSet = 0.003 * value;
-    readTextFile("./Point Clouds/Cone v2.ply");
+    readTextFile("./Point Clouds/" + currPointCloud + ".ply");
     requestAnimationFrame(render);
 }
 
@@ -188,7 +211,7 @@ function createPointCloud(input:string){
     let normalData:vec4[] = [];
     let colorData:vec4[] = [];
     let textureCoords:vec2[] = [];
-    let tangentCoord:vec4[] = [];
+    let squareCoords:vec4[] = [];
 
     //The 49th position is the first position with actual data in it
     //
@@ -198,7 +221,7 @@ function createPointCloud(input:string){
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(0, 0));
-            tangentCoord.push(new vec4(1,0,0,0));
+            squareCoords.push(new vec4(1,0,0,0));
         }
     } else {
         for(let i:number = 49; i < 10*numVerts + 49; i+= 10){
@@ -208,7 +231,7 @@ function createPointCloud(input:string){
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(1, 1));
-            tangentCoord.push(new vec4(0,0.01,0.01,0));
+            squareCoords.push(new vec4(0,0.01,0.01,0));
 
             //Bottom right point
             positionData.push(new vec4((parseFloat(numbers[i]) * 10), (parseFloat(numbers[i+1]) * 10) + yOffSet, (parseFloat(numbers[i+2]) * 10) - xOffSet, 1));
@@ -216,7 +239,7 @@ function createPointCloud(input:string){
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(1, 0));
-            tangentCoord.push(new vec4(0,0.01,-0.01,0));
+            squareCoords.push(new vec4(0,0.01,-0.01,0));
 
             //Top left point
             positionData.push(new vec4((parseFloat(numbers[i]) * 10), (parseFloat(numbers[i+1]) * 10) - yOffSet, (parseFloat(numbers[i+2]) * 10) + xOffSet, 1));
@@ -224,7 +247,7 @@ function createPointCloud(input:string){
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(0, 1));
-            tangentCoord.push(new vec4(0,-0.01,0.01,0));
+            squareCoords.push(new vec4(0,-0.01,0.01,0));
 
             //Bottom left point
             positionData.push(new vec4((parseFloat(numbers[i]) * 10), (parseFloat(numbers[i+1]) * 10) - yOffSet, (parseFloat(numbers[i+2]) * 10) - xOffSet, 1));
@@ -232,7 +255,7 @@ function createPointCloud(input:string){
             normalData.push(new vec4(parseFloat(numbers[i+3]), parseFloat(numbers[i+4]), parseFloat(numbers[i+5]), 0));
             colorData.push(new vec4(parseFloat(numbers[i+6])/255, parseFloat(numbers[i+7])/255, parseFloat(numbers[i+8])/255, parseFloat(numbers[i+9])/255));
             textureCoords.push(new vec2(0, 0));
-            tangentCoord.push(new vec4(0,-0.01,-0.01,0));
+            squareCoords.push(new vec4(0,-0.01,-0.01,0));
         }
     }
 
@@ -245,7 +268,7 @@ function createPointCloud(input:string){
         meshVertexData.push(normalData[i]);
         meshVertexData.push(colorData[i]);
         meshVertexData.push(textureCoords[i]);
-        meshVertexData.push(tangentCoord[i]);
+        meshVertexData.push(squareCoords[i]);
     }
 
     //buffer vertex data and enable vPosition attribute
@@ -275,7 +298,7 @@ function createPointCloud(input:string){
     gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 72, 48);
     gl.enableVertexAttribArray(vTexCoord);
 
-    basicSquareCoord = gl.getAttribLocation(program, "vTangent");
+    basicSquareCoord = gl.getAttribLocation(program, "vSquare");
     gl.vertexAttribPointer(basicSquareCoord, 2, gl.FLOAT, false, 72, 56);
     gl.enableVertexAttribArray(basicSquareCoord);
 }
@@ -286,7 +309,7 @@ function makeTexture() {
     //mmtexture is the main memory texture
     let mmtexture:Uint8Array = new Uint8Array(texHeight * texWidth * 4);
 
-    let rowOneFiveValues:number[] = [0, 50, 100, 24.735, 0];
+    let rowOneFiveValues:number[] = [0, 50, 100, 50, 0];
     let rowTwoFourValues:number[] = [50, 175, 255, 175, 50];
     let rowThreeValues:number[] = [100, 255, 255, 255, 100];
 
